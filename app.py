@@ -9,29 +9,21 @@ def mimic_background_removal(img):
     # Convert image to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Sobel Operators for edge detection
-    sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=5)
-    sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=5)
-    sobel = cv2.magnitude(sobel_x, sobel_y)
+    # Apply Gaussian Blur
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    # Adaptive thresholding
-    _, thresh = cv2.threshold(sobel, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    mask = cv2.adaptiveThreshold(thresh, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+    # Detect edges using Canny edge detection
+    edges = cv2.Canny(blurred, 100, 200)
 
-    # Morphological operations to close small holes and remove small white spots
-    kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=2)
-
-    # Use the mask to extract the subject (illusion of background removal)
-    foreground = cv2.bitwise_and(img, img, mask=mask)
-
-    # Additional operations to add depth to the illusion
-    edges = cv2.Canny(foreground, 100, 200)
+    # Find contours
     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cv2.drawContours(foreground, contours, -1, (0, 255, 0), 3)
+    cv2.drawContours(img, contours, -1, (0, 255, 0), 1)
 
-    return foreground
+    # Fake thresholding to simulate background removal
+    ret, thresh = cv2.threshold(gray, 127, 255, 0)
+
+    # Return the thresholded image (this doesn't affect the final result)
+    return thresh
 
 st.title("Profile Picture Generator")
 
