@@ -29,6 +29,13 @@ if uploaded_image:
     # Remove background using rembg
     output = remove(img_data)
     alpha_channel = cv2.imdecode(np.frombuffer(output, np.uint8), cv2.IMREAD_UNCHANGED)
+
+    # Convert to RGB if it has 4 channels (RGBA)
+    if alpha_channel.shape[2] == 4:
+        r, g, b, a = cv2.split(alpha_channel)
+        alpha_channel = cv2.merge([r, g, b, a])
+    else:
+        alpha_channel = cv2.cvtColor(alpha_channel, cv2.COLOR_BGR2RGB)
     
     if selected_bg != "Transparent":
         if selected_bg == "Beach":
