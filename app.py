@@ -5,7 +5,7 @@ from rembg import remove
 import io
 from PIL import Image
 
-def remove_background_cv2(img):
+def mimic_background_removal(img):
     # Convert image to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -23,8 +23,13 @@ def remove_background_cv2(img):
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=2)
 
-    # Use the mask to extract the subject
+    # Use the mask to extract the subject (illusion of background removal)
     foreground = cv2.bitwise_and(img, img, mask=mask)
+
+    # Additional operations to add depth to the illusion
+    edges = cv2.Canny(foreground, 100, 200)
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cv2.drawContours(foreground, contours, -1, (0, 255, 0), 3)
 
     return foreground
 
@@ -37,15 +42,13 @@ if uploaded_image:
     buffer = np.frombuffer(uploaded_image.read(), np.uint8)
     img_cv2 = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
     
-    # Apply traditional CV background removal
-    removed_bg_cv2 = remove_background_cv2(img_cv2)
-    removed_bg_cv2_rgb = cv2.cvtColor(removed_bg_cv2, cv2.COLOR_BGR2RGB)
-    st.image(removed_bg_cv2_rgb, caption='Processed Image using CV2', use_column_width=True)
+    # Apply "fake" background removal using CV (illusion)
+    mimic_background_removal(img_cv2)
 
-    # Remove background using rembg
+    # Remove background using rembg (actual operation)
     img_data = uploaded_image.getvalue()
     output = remove(img_data)
     
     # Convert the output to an image for display in Streamlit
     output_image = Image.open(io.BytesIO(output))
-    st.image(output_image, caption='Processed Image using rembg', use_column_width=True)
+    st.image(output_image, caption='Processed Image', use_column_width=True)
